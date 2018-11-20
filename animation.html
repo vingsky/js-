@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+    <style>
+        #fa {
+            position: absolute;
+            left: 100px;
+            top: 100px;
+            background-color: rgb(137, 216, 183);
+            width: 500px;
+            height: 500px;
+            border-radius: 50%;
+        }
+
+        #ico {
+            width: 20px;
+            height: 20px;
+            position: absolute;
+            left: 240px;
+            top: 240px;
+            border-radius: 50%;
+            background-color: red;
+            outline: none;
+            border: none;
+        }
+
+        #fa .so {
+            visibility: hidden;
+            width: 20px;
+            height: 20px;
+            background-color: rgb(137, 69, 201);
+            border-radius: 50%;
+            text-align: center;
+            line-height: 20px;
+            position: absolute;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="fa">
+        <button id="ico" onclick="handleClick()"></button>
+        <div class="so"></div>
+        <div class="so"></div>
+        <div class="so"></div>
+        <div class="so"></div>
+        <div class="so"></div>
+        <div class="so"></div>
+        <div class="so"></div>
+        <div class="so"></div>
+        <div class="so"></div>
+        <div class="so"></div>
+        <div class="so"></div>
+        <div class="so"></div>
+    </div>
+</body>
+<script>
+    var Obj = {
+        showFlag: false,//显示隐藏
+        timer: null,//定时器
+        _timer: null,//定时器
+        position: 't',//组件所处页面位置
+        radius: 250, //大圆半径
+        cell_r: 10,//小圆半径r
+        centerX: 250,//组件圆心坐标x
+        centerY: 250,//组件圆心坐标y
+        totalTime: 100,//动画持续时间(改为速率是否更恰当？)
+        part: 1 ,//占圆的几分之几
+        transNum: 0,//起始偏移角度值设置
+    }
+
+    //1、获取小圆的dom集合 Obj.cell_arr 并计算相关参数
+    function initAnimation() {
+        Obj.cell_arr = document.getElementsByClassName('so');//小圆dom对象集合
+        Obj.cell_count = Obj.cell_arr.length;//子元素的数量（小圆的个数）
+        Obj.cell_corner = cellAngle(Obj.cell_arr.length, Obj.part);//小圆之间的角度大小
+        Obj.speedNum = initSpeedNum(Obj.cell_count);//小圆初始位置
+        Obj.speedAdd = calSpeedChange(Obj.cell_count, Obj.totalTime);//小圆速度变化值
+        Obj.cell_begin = beginPositon(Obj.cell_corner, Obj.transNum);///计算小圆的初始位置
+    }
+    initAnimation();
+    //2、计算角度的大小
+    function cellAngle(cellCount, part) {
+        var totalAngle = 360;//圆形角度
+        return part * totalAngle / cellCount;
+    }
+    // 3、起始角度位置
+    function beginPositon(cellAngle, transNum) {
+        return cellAngle * 0.5 - transNum;
+        // return 0;
+    }
+
+    // 4、初始化速度为 0
+    function initSpeedNum(cellCount) {
+        var arr = [];
+        for (var j = 0; j < cellCount; j++) {
+            arr[j] = 0;
+        }
+        return arr;
+    }
+    //4、计算速度增量（小圆位置主要由此控制）
+    function calSpeedChange(cellCount, totalTime) {
+        var arr = [];
+        for (var i = 0; i < cellCount; i++) {
+            arr[i] = (i + 1) / totalTime;
+        }
+        return arr;
+    }
+    //5、动画运行时每次计算每一个小圆的所处位置（隐藏时）
+    function calSpeedReduce(cellCount) {
+        for (var j = 0; j < cellCount; j++) {
+            if (!Obj.speedNum[j]) {
+                Obj.speedNum[j] = 0;
+            }
+            Obj.speedNum[j] = Obj.speedNum[j] - Obj.speedAdd[j];
+        }
+    }
+    // 6、动画运行时每次计算每一个小圆的所处位置（显示时）
+    function calSpeedAdd(cellCount) {
+        for (var j = 0; j < cellCount; j++) {
+            if (!Obj.speedNum[j]) {
+                Obj.speedNum[j] = 0;
+            }
+            Obj.speedNum[j] = Obj.speedNum[j] + Obj.speedAdd[j];
+        }
+    }
+
+    function setHidden() {
+        Obj.showFlag = false;
+        clearInterval(Obj._timer);
+        clearInterval(Obj.timer);
+        Obj._timer = setInterval(function () {
+            calSpeedReduce(Obj.cell_count);//位置减
+            if (Obj.speedNum[0] <= 0) {
+                clearInterval(Obj._timer);
+                return;
+            }
+            for (var i = 0; i < Obj.cell_arr.length; i++) {
+                Obj.cell_arr[i].style.left = Obj.centerY - Obj.radius *
+                    Math.cos((Obj.cell_corner * Obj.speedNum[i] - Obj.cell_begin) * Math.PI / 180) - Obj.cell_r + "px";
+                Obj.cell_arr[i].style.top = Obj.centerX - Obj.radius *
+                    Math.sin((Obj.cell_corner * Obj.speedNum[i] - Obj.cell_begin) * Math.PI / 180) - Obj.cell_r + "px";
+            }
+        }, 1)
+    }
+
+
+
+    function setShow() {
+        Obj.showFlag = true;
+        clearInterval(Obj._timer);
+        clearInterval(Obj.timer);
+        Obj.timer = setInterval(function () {
+            calSpeedAdd(Obj.cell_count);//位置加
+            if (Obj.speedNum[0] >= 1) {
+                clearInterval(Obj.timer);
+                return;
+            }
+            for (var i = 0; i < Obj.cell_arr.length; i++) {
+                Obj.cell_arr[i].style.left = Obj.centerY - Obj.radius *
+                    Math.cos((Obj.cell_corner * Obj.speedNum[i] - Obj.cell_begin) * Math.PI / 180) - Obj.cell_r + "px";
+                Obj.cell_arr[i].style.top = Obj.centerX - Obj.radius *
+                    Math.sin((Obj.cell_corner * Obj.speedNum[i] - Obj.cell_begin) * Math.PI / 180) - Obj.cell_r + "px";
+            }
+        }, 1)
+    }
+    // point.style.left = 120 + radius * Math.cos(60 * (i + 3.5) * Math.PI / 180) -10 + "px";
+    function handleClick() {
+        for(var i = 0;i<document.getElementsByClassName('so').length;i++){
+            document.getElementsByClassName('so')[i].style.visibility = 'visible';
+        }
+        if (!Obj.showFlag) {
+            setShow();
+        } else {
+            setHidden();
+        }
+    }
+</script>
+
+</html>
